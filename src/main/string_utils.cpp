@@ -2,7 +2,7 @@
 #include "ieee80211_structs.h"
 
 // Uncomment to enable MAC address masking
-#define MASKED
+//#define MASKED
 
 //Returns a human-readable string from a binary MAC address.
 //If MASKED is defined, it masks the output with XX
