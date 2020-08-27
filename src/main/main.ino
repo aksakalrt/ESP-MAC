@@ -98,7 +98,7 @@ void wifi_sniffer_packet_handler(uint8_t *buff, uint16_t len)
 
       if (is_ap == false)
       {
-        String dataString = "";
+        String dataString = "+";
         dataString += (String) addr2;
         dataString += " -> ";
         dataString += rtc.getDateStr();
@@ -163,8 +163,22 @@ void print_list(String list[], int len) {
 }
 
 void connect_wifi() {
+  File wf = SD.open("wifi.txt");
+  String ssid = "";
+  String pwd = "";
+  if (wf) {
+    while (wf.available()) {
+      ssid += (char)wf.read();
+    }
+    pwd = ssid.substring((ssid.indexOf(',')+1), ssid.length());
+    ssid = ssid.substring(0, ssid.indexOf(','));
+    wf.close();
+  }
+  else {
+    Serial.println("wifi.txt yok");
+  }
   WiFi.mode(WIFI_STA);
-  WiFi.begin("orange", "orange123");
+  WiFi.begin(ssid, pwd);
   Serial.println("Ağa Bağlanılıyor");
   while (WiFi.status() != WL_CONNECTED)
   {
@@ -245,14 +259,6 @@ void initSnif() {
   j = 0;
   k = 0;
 
-  Serial.println("Initializing SD card...");
-
-  while (!SD.begin(chipSelect)) {
-    Serial.println("Card failed, or not present");
-  }
-
-  Serial.println("initialization done.");
-
   filename = "";
   filename += rtc.getDateStr();
   filename += "-";
@@ -286,6 +292,19 @@ void initSnif() {
 void setup() {
 
   Serial.begin(115200);
+
+  delay(10);
+  
+  Serial.println();
+
+  Serial.println("Initializing SD card...");
+
+  while (!SD.begin(chipSelect)) {
+    Serial.println("Card failed, or not present");
+  }
+
+  Serial.println("initialization done.");
+
 
   delay(10);
 
@@ -323,8 +342,8 @@ void loop() {
 
     connect_wifi();
 
-    char *host = "webhook.site";
-    String firstline = "POST /a8409f7d-35ac-47b6-8c30-9c53e7da9c24 HTTP/1.1";
+    char *host = "127.0.0.1"; //your host url like google.com or ip adress
+    String firstline = "POST /api/ HTTP/1.1";
     String data = fFilename;
 
     File rFile = SD.open(filename);
@@ -353,6 +372,6 @@ void loop() {
     }
     Serial.println("Yeniden Tarama Başlatılıyor...");
     delay(5000);
-    initSnif();
+    ESP.restart();
   }
 }
