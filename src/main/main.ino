@@ -22,6 +22,10 @@ String apList[a];
 
 String filename = "";
 
+String ssid = "";
+String pwd = "";
+char* host = "";
+
 int j = 0;
 int k = 0;
 
@@ -162,21 +166,32 @@ void print_list(String list[], int len) {
   }
 }
 
-void connect_wifi() {
-  File wf = SD.open("wifi.txt");
-  String ssid = "";
-  String pwd = "";
+void get_config(){
+  File wf = SD.open("config.txt");
+  String text = "";
   if (wf) {
     while (wf.available()) {
-      ssid += (char)wf.read();
+      text += (char)wf.read();
     }
-    pwd = ssid.substring((ssid.indexOf(',')+1), ssid.length());
-    ssid = ssid.substring(0, ssid.indexOf(','));
+    int st = 0;
+    int nd = 0;
+    st = text.indexOf('#');
+    nd = text.indexOf('$');
+    ssid = text.substring((st+1), nd);
+    st = text.indexOf('~');
+    nd = text.indexOf('|');
+    pwd = text.substring((st+1), nd);
+    st = text.indexOf('£');
+    nd = text.indexOf('é');
+    strcpy(host,text.substring((st+1), (nd-1)).c_str());
     wf.close();
   }
   else {
-    Serial.println("wifi.txt yok");
+    Serial.println("config.txt yok");
   }
+}
+
+void connect_wifi() {
   WiFi.mode(WIFI_STA);
   WiFi.begin(ssid, pwd);
   Serial.println("Ağa Bağlanılıyor");
@@ -189,17 +204,17 @@ void connect_wifi() {
   Serial.println("Ağa Bağlandı");
 }
 
-void send_packet(char *host, String firstline, String data) {
+void send_packet(char *ch, String firstline, String data) {
   WiFiClient client;
 
-  if (!client.connect(host, 80)) {
+  if (!client.connect(ch, 80)) {
     Serial.println("Hosta Bağlanamadı");
     return;
   }
 
   client.println(firstline);
   client.print("Host: ");
-  client.println(host);
+  client.println(ch);
   client.println("Accept: */*");
   client.println("Content-Type: text/plain");
   client.print("Content-Length: ");
@@ -308,6 +323,8 @@ void setup() {
 
   delay(10);
 
+  get_config();
+  
   connect_wifi();
 
   initRTC();
@@ -342,7 +359,7 @@ void loop() {
 
     connect_wifi();
 
-    char *host = "127.0.0.1"; //your host url like google.com or ip adress
+
     String firstline = "POST /api/ HTTP/1.1";
     String data = fFilename;
 
